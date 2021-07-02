@@ -1,6 +1,5 @@
 const fetch = require('node-fetch');
 
-
 function db_encode(season, year) {
   var season_code;
   var year_code;
@@ -92,6 +91,7 @@ async function get_details(code, crn, db_code = '999999') {
 function Course(course_code) {
   this.course_code = course_code;
   this.instances = [];
+  this.title = undefined;
   this.pre_reqs = new Set();
   this.req_for = new Set();
   this.add_instance = async function (crn, db_code) {
@@ -109,16 +109,17 @@ function Course(course_code) {
     this.pre_reqs.forEach(req_set => req_set.forEach(pre_req => {
       if (course_dict.courses[pre_req]) {
         course_dict.courses[pre_req].req_for = new Set([this.course_code, ...course_dict.courses[pre_req].req_for]);
-      } // TODO: if we cant acces them we should find a way to add them.
+      } // TODO: if we cant access them we should find a way to add them.
     }))
   }
 }
 
 function Course_Dict () {
   this.courses = {};
-  this.add_course = function (course_code, crn, db_code) {
+  this.add_course = function (course_code, crn, db_code, title = undefined) {
     if (!this.courses[course_code]) {
       this.courses[course_code] = new Course(course_code);
+      this.courses[course_code].title = title; // TODO: perhaps streamline this?
     } 
     this.courses[course_code].add_instance(crn, db_code);
   }
@@ -137,7 +138,7 @@ async function make_course_dict(keyword, season = 'any', year = 2021) {
   var course_dict = new Course_Dict();
   for (i in courses.results) {
     let course = courses.results[i];
-    course_dict.add_course(course.code, course.crn, course.srcdb);
+    course_dict.add_course(course.code, course.crn, course.srcdb, course.title);
   }
   return course_dict;
 }
@@ -152,7 +153,7 @@ async function make_course_dict_manydbs(keyword) {
     }
     for (i in courses.results) {
       let course = courses.results[i];
-      course_dict.add_course(course.code, course.crn, course.srcdb);
+      course_dict.add_course(course.code, course.crn, course.srcdb, course.title);
     }
   }
   if (isEmpty(course_dict.courses)) {
@@ -164,8 +165,8 @@ async function make_course_dict_manydbs(keyword) {
 
 async function make_all_course_dict() {
   var course_dict = new Course_Dict();
-  // var dbs = get_many_dbs(); // TODO: known issue that chrome can't handle these requests :(
-  var dbs = ['999999', '202120', '202020', '202010', '201910'];
+  var dbs = get_many_dbs(); // TODO: known issue that chrome can't handle these requests :(
+  // var dbs = ['999999', '202120', '202020', '202010', '201910'];
   // var dbs = ['201910'];
   for (db in dbs) {
     let courses = await get_all_db_courses(dbs[db]);
@@ -174,7 +175,7 @@ async function make_all_course_dict() {
     }
     for (i in courses.results) {
       let course = courses.results[i];
-      course_dict.add_course(course.code, course.crn, course.srcdb);
+      course_dict.add_course(course.code, course.crn, course.srcdb, course.title);
     }
   }
   if (isEmpty(course_dict.courses)) {
@@ -193,8 +194,10 @@ async function main() {
   // cs.update_req_fors();
   // console.log(countItems(cs.courses));
   all_courses = await make_all_course_dict();
+  all_courses.update_req_fors();
   console.log(countItems(all_courses.courses));
-  console.log("YOU SHOULD SEE THIS");
+  // console.log("YOU SHOULD SEE THIS");
+  console.log(Array.from(all_courses.courses['CSCI 0320'].req_for).map(x => [x, all_courses.courses[x].title]));
 }
 
 main();
