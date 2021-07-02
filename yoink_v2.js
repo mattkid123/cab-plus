@@ -58,34 +58,28 @@ function countItems(obj) {
 }
 
 async function get_courses(keyword, season = 'any', year = 2021, db_code = null) {
-  var res;
   var db = db_code ? db_code : db_encode(season, year);
   var bod = '{"other":{"srcdb":"' + db + '"},"criteria":[{"field":"keyword","value":"' + String(keyword) + '"},{"field":"is_ind_study","value":"N"},{"field":"is_canc","value":"N"}]}';
-  await fetch("https://cab.brown.edu/api/?page=fose&route=search", {
+  return await fetch("https://cab.brown.edu/api/?page=fose&route=search", {
     "body": encodeURIComponent(bod),
     "method": "POST",
-  }).then(response => response.json()).then(data => {res = data});
-  return res;
+  }).then(response => response.json());
 }
 
 async function get_all_db_courses(db = '999999') {
-  var res;
   var bod = '{"other":{"srcdb":"' + String(db) + '"},"criteria":[{"field":"is_ind_study","value":"N"},{"field":"is_canc","value":"N"}]}';
-  await fetch("https://cab.brown.edu/api/?page=fose&route=search", {
+  return await fetch("https://cab.brown.edu/api/?page=fose&route=search", {
     "body": encodeURIComponent(bod),
     "method": "POST",
-  }).then(response => response.json()).then(data => {res = data});
-  return res;
+  }).then(response => response.json());
 }
 
 async function get_details(code, crn, db_code = '999999') {
-  var res;
   var bod = '{"group":"code:' + String(code) + '","key":"crn:' + String(crn) + '","srcdb":"' + db_code + '","matched":"crn:' + String(crn) + '"}';
-  await fetch("https://cab.brown.edu/api/?page=fose&route=details", {
+  return await fetch("https://cab.brown.edu/api/?page=fose&route=details", {
     "body": encodeURIComponent(bod),
     "method": "POST",
-  }).then(response => response.json()).then(data => {res = data});
-  return res;
+  }).then(response => response.json());
 }
 
 function Course(course_code) {
@@ -165,9 +159,7 @@ async function make_course_dict_manydbs(keyword) {
 
 async function make_all_course_dict() {
   var course_dict = new Course_Dict();
-  var dbs = get_many_dbs(); // TODO: known issue that chrome can't handle these requests :(
-  // var dbs = ['999999', '202120', '202020', '202010', '201910'];
-  // var dbs = ['201910'];
+  var dbs = get_many_dbs();
   for (db in dbs) {
     let courses = await get_all_db_courses(dbs[db]);
     if (courses.fatal) {
