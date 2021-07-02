@@ -1,3 +1,9 @@
+// DEPRECATED FILE ONLY USED FOR SCRAP
+//
+//
+// --------------------------------------------------------------
+
+
 // Any term general CAB request:
 // fetch("https://cab.brown.edu/api/?page=fose&route=search", {
 //   "body": "%7B%22other%22%3A%7B%22srcdb%22%3A%22999999%22%7D%2C%22criteria%22%3A%5B%7B%22field%22%3A%22keyword%22%2C%22value%22%3A%22csci%22%7D%2C%7B%22field%22%3A%22is_ind_study%22%2C%22value%22%3A%22N%22%7D%2C%7B%22field%22%3A%22is_canc%22%2C%22value%22%3A%22N%22%7D%5D%7D",
@@ -161,4 +167,41 @@ function Course(course_code) {
   this.add_instance = function (crn, db_code) {
     this.instance 
   }
+}
+
+function Course_Dict () {
+  this.courses = {};
+  this.add_course = function(course_code, )
+}
+
+async function make_classes_dict(found_classes) {
+  var classes = new Course_Dict();
+  var regex = /code:(.*?)"/g;
+  for (i in found_classes.results) {
+    // console.log(found_classes.results[i].code);
+    curr_class = found_classes.results[i];
+    curr_class_details = await any_term_get_details(curr_class.code, curr_class.crn);
+    if (classes[curr_class.code] && !curr_class_details.fatal) {
+      // console.log("Adding to set");
+      classes[curr_class.code].crns.add(curr_class.crn);
+
+      reqs_string = curr_class_details.registration_restrictions;
+      // reqs_arr = Array.from(reqs_string.matchAll(regex)).map(x => x[1]);
+      // classes[curr_class.code].pre_reqs = new Set([...classes[curr_class.code].pre_reqs, ...reqs_arr]);
+      classes[curr_class.code].pre_reqs = new Set([...reqs_string.split('and').map(x => new Set(Array.from(x.matchAll(regex)).map(x => x[1]))), ...classes[curr_class.code].pre_reqs]);
+
+    } else if (!curr_class_details.fatal) {
+      // console.log("Creating new set");
+      classes[curr_class.code] = {};
+      classes[curr_class.code].crns = new Set([curr_class.crn]);
+
+      reqs_string = curr_class_details.registration_restrictions;
+      // reqs_arr = Array.from(reqs_string.matchAll(regex)).map(x => x[1]);
+      // classes[curr_class.code].pre_reqs = new Set(reqs_arr);
+      classes[curr_class.code].pre_reqs = new Set(reqs_string.split('and').map(x => new Set(Array.from(x.matchAll(regex)).map(x => x[1]))));
+
+      classes[curr_class.code].req_for = new Set();
+    }
+  }
+  return classes;
 }
