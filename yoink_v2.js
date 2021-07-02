@@ -113,7 +113,7 @@ function Course_Dict () {
   this.add_course = function (course_code, crn, db_code, title = undefined) {
     if (!this.courses[course_code]) {
       this.courses[course_code] = new Course(course_code);
-      this.courses[course_code].title = title; // TODO: perhaps streamline this?
+      this.courses[course_code].title = title;
     } 
     this.courses[course_code].add_instance(crn, db_code);
   }
@@ -178,7 +178,6 @@ async function make_all_course_dict() {
 }
 
 
-
 // TESTS FOR NOW
 
 async function main() {
@@ -188,7 +187,6 @@ async function main() {
   all_courses = await make_all_course_dict();
   all_courses.update_req_fors();
   console.log(countItems(all_courses.courses));
-  // console.log("YOU SHOULD SEE THIS");
   console.log(Array.from(all_courses.courses['CSCI 0320'].req_for).map(x => [x, all_courses.courses[x].title]));
 }
 
